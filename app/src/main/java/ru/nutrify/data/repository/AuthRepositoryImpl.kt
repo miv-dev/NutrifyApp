@@ -5,7 +5,9 @@ import ru.nutrify.domain.entity.AuthState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.nutrify.data.local.TokenService
 import ru.nutrify.data.mapper.UserMapper
@@ -27,10 +29,14 @@ class AuthRepositoryImpl @Inject constructor(
     private val _authState = MutableStateFlow<AuthState>(AuthState.Initial)
 
 
-    override val authState: StateFlow<AuthState> = _authState
+    override val authState: StateFlow<AuthState> = _authState.stateIn(
+        scope,
+        SharingStarted.Lazily,
+        AuthState.Initial
+    )
 
-    override suspend fun login(email: String, password: String): Response<Unit> {
-        return when (val response = apiService.login(email, password)) {
+    override suspend fun login(username: String, password: String): Response<Unit> {
+        return when (val response = apiService.login(username, password)) {
 
             is ApiResponse.Success -> {
                 tokenService.setAccessToken(response.data.access)
@@ -51,6 +57,32 @@ class AuthRepositoryImpl @Inject constructor(
         }
 
 
+    }
+
+    override suspend fun register(
+        username: String,
+        email: String,
+        password: String
+    ): Response<Unit> {
+        return when (val response = apiService.register(email, username, password)) {
+
+            is ApiResponse.Success -> {
+                tokenService.setAccessToken(response.data.access)
+                tokenService.setRefreshToken(response.data.refresh)
+                checkAuthState()
+                Response.Success(Unit)
+            }
+
+            is ApiResponse.ApiException -> {
+                _authState.emit(AuthState.NonAuthorized)
+                Response.Error(errorService.getError(response.response))
+            }
+
+            is ApiResponse.UnhandledException -> {
+                _authState.emit(AuthState.NonAuthorized)
+                Response.Error(errorService.getError(response.exception))
+            }
+        }
     }
 
     init {

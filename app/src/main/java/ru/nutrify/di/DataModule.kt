@@ -7,6 +7,7 @@ import dagger.Module
 import dagger.Provides
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -20,14 +21,21 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ru.nutrify.R
 import ru.nutrify.data.dto.TokenDTO
 import ru.nutrify.data.local.TokenService
-import java.util.prefs.Preferences
+import ru.nutrify.data.remote.ApiEndpoints
+import ru.nutrify.data.repository.AuthRepositoryImpl
+import ru.nutrify.domain.repository.AuthRepository
 
 @Module
 interface DataModule {
+
+    @[Binds ApplicationScope]
+    fun bindsAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
 
     companion object {
         @[ApplicationScope Provides]
@@ -40,7 +48,7 @@ interface DataModule {
 
         @[ApplicationScope Provides]
         fun providesHttpClient(tokenService: TokenService): HttpClient {
-            return HttpClient {
+            return HttpClient(CIO) {
                 defaultRequest {
                     url(BASE_URL)
                     contentType(ContentType.Application.Json)
@@ -64,21 +72,20 @@ interface DataModule {
                             BearerTokens(bearer, refresh)
                         }
                         refreshTokens {
-
+                            val refresh = tokenService.loadRefreshToken()
                             val response = client.post {
                                 markAsRefreshTokenRequest()
-                                url("auth/refresh")
-                                setBody(hashMapOf("refreshToken" to tokenService.loadRefreshToken()))
+                                url(ApiEndpoints.REFRESH_TOKEN)
+                                setBody(hashMapOf("refresh" to refresh))
                             }
                             if (response.status == HttpStatusCode.OK) {
-                                val token = response.body<TokenDTO>()
+                                val token = response.body<AccessToken>()
 
                                 tokenService.setAccessToken(token.access)
-                                tokenService.setRefreshToken(token.refresh)
 
                                 return@refreshTokens BearerTokens(
                                     token.access,
-                                    token.refresh
+                                    refresh
                                 )
                             }
                             null
@@ -92,5 +99,9 @@ interface DataModule {
         }
     }
 }
+@Serializable
+data class AccessToken(
+    val access: String
+)
 
-private const val BASE_URL = "http://192.168.1.56:8000"
+private const val BASE_URL = "http://192.168.1.159:8080"

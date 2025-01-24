@@ -9,7 +9,9 @@ import ru.nutrify.domain.entity.User
 interface AuthRepository {
     val authState: StateFlow<AuthState>
 
-    suspend fun login(email: String, password: String): Response<Unit>
+    suspend fun login(username: String, password: String): Response<Unit>
+
+    suspend fun register(username: String, email: String, password: String): Response<Unit>
 
     fun logout()
 

@@ -37,6 +37,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -44,12 +45,13 @@ android {
 dependencies {
 
     implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.json)
     implementation(libs.ktor.negotiation)
     implementation(libs.ktor.auth)
 
     implementation(libs.decompose.core)
-    implementation(libs.decompose.jetbrains)
+    implementation(libs.decompose.compose)
     implementation(libs.essenty.lifecycle)
 
     implementation(libs.mvikotlin.main)
@@ -69,6 +71,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material3.icons.extended)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

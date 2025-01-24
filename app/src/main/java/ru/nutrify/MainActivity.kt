@@ -11,37 +11,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.arkivanov.decompose.defaultComponentContext
+import ru.nutrify.presentation.root.DefaultRootComponent
+import ru.nutrify.presentation.root.RootContent
 import ru.nutrify.ui.theme.NutrifyTheme
+import javax.inject.Inject
 
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var rootComponentFactory: DefaultRootComponent.Factory
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        (applicationContext as NutrifyApp).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+
+        val rootComponent = rootComponentFactory.create(defaultComponentContext())
         setContent {
-            NutrifyTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            RootContent(rootComponent)
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    NutrifyTheme {
-        Greeting("Android")
     }
 }

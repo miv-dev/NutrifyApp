@@ -15,11 +15,11 @@ import javax.inject.Inject
 class UserApiService @Inject constructor(
     private val client: HttpClient
 ) {
-    suspend fun login(email: String, password: String): ApiResponse<TokenDTO> {
+    suspend fun login(username: String, password: String): ApiResponse<TokenDTO> {
         return try {
             client.post(ApiEndpoints.LOGIN) {
                 setBody(
-                    hashMapOf("email" to email, "password" to password)
+                    hashMapOf("username" to username, "password" to password)
                 )
             }.result()
         } catch (e: Exception) {
